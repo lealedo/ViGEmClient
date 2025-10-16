@@ -1,0 +1,46 @@
+name: Build ViGEmClient DLL
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-2022
+
+    env:
+      VIGEMCLIENT_BUILD_DIR: build
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install CMake
+      uses: lukka/get-cmake@latest
+
+    - name: Configure CMake (DLL build, Release, x64)
+      run: |
+        cmake -S . -B ${{ env.VIGEMCLIENT_BUILD_DIR }} `
+          -G "Visual Studio 17 2022" `
+          -A x64 `
+          -DCMAKE_BUILD_TYPE=Release `
+          -DViGEmClient_DLL=ON `
+          -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON
+
+    - name: Build DLL (Release, x64)
+      run: |
+        cmake --build ${{ env.VIGEMCLIENT_BUILD_DIR }} --config Release
+
+    - name: Upload DLL and related artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: vigemclient-dll-x64
+        path: |
+          ${{ env.VIGEMCLIENT_BUILD_DIR }}/Release/*.dll
+          ${{ env.VIGEMCLIENT_BUILD_DIR }}/Release/*.pdb
+          ${{ env.VIGEMCLIENT_BUILD_DIR }}/Release/*.lib
+          ${{ env.VIGEMCLIENT_BUILD_DIR }}/Release/*.exp
+          ${{ env.VIGEMCLIENT_BUILD_DIR }}/Release/*.def
